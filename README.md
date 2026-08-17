@@ -152,7 +152,7 @@ modification et de distribution.
 
 ## 👩‍💻 Auteur
 
-Développé par **[Votre Nom]**, étudiante en informatique passionnée par les
+Développé par Zahraa Badreddine , étudiante en informatique passionnée par les
 réseaux et la cybersécurité.
 
 [LinkedIn](#) • [GitHub](#)
