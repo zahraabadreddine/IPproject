@@ -16,6 +16,7 @@ avec un code volontairement clair, commenté et pédagogique.
 
 - 🔎 **Détection automatique** du type d'adresse (IPv4 / IPv6)
 - 🖥️ **Interface en ligne de commande** interactive ou en argument direct
+- 🪟 **Interface graphique** (Tkinter) pour une utilisation sans terminal
 - 📊 **Tableaux colorés** grâce à la bibliothèque [`rich`](https://github.com/Textualize/rich)
 - 🧮 Calcule automatiquement :
   - Adresse réseau
@@ -104,6 +105,19 @@ python subnet_calculator.py 192.168.1.45/24
 python subnet_calculator.py 2001:db8::/32
 ```
 
+### Mode graphique (GUI)
+
+Une interface graphique (Tkinter, inclus nativement avec Python — aucune
+dépendance supplémentaire) est aussi disponible pour une utilisation sans
+terminal :
+
+```bash
+python subnet_calculator_gui.py
+```
+
+Saisissez une adresse IP/CIDR dans le champ puis cliquez sur **Calculer**
+(ou appuyez sur Entrée) pour afficher les résultats dans le tableau.
+
 ---
 
 ## 🧠 Exemples
@@ -129,9 +143,10 @@ python subnet_calculator.py 2001:db8::/32
 
 ```
 subnet-calculator/
-├── subnet_calculator.py   # Script principal
-├── requirements.txt       # Dépendances Python
-└── README.md               # Ce fichier
+├── subnet_calculator.py       # Script principal (CLI)
+├── subnet_calculator_gui.py   # Interface graphique (Tkinter)
+├── requirements.txt           # Dépendances Python
+└── README.md                   # Ce fichier
 ```
 
 ---
