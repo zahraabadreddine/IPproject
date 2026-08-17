@@ -9,6 +9,7 @@ avec un code volontairement clair, commenté et pédagogique.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green)
+![Tests](https://github.com/zahraabadreddine/IPproject/actions/workflows/tests.yml/badge.svg)
 
 ---
 
@@ -31,30 +32,9 @@ avec un code volontairement clair, commenté et pédagogique.
 
 ## 📸 Aperçu
 
-```
-╔══════════════════════════════════════════════════════════╗
-║                Calculateur de Sous-Réseaux IP             ║
-║   Compatible IPv4 & IPv6 — propulsé par `ipaddress`       ║
-╚══════════════════════════════════════════════════════════╝
+Interface graphique (Tkinter) affichant le résultat pour `192.168.1.45/24` :
 
-➜ Adresse IP/CIDR : 192.168.1.45/24
-
-╭─────────────────── Résultats du calcul — IPv4 ───────────────────╮
-│ Propriété                 │ Valeur                                │
-├────────────────────────────┼───────────────────────────────────────┤
-│ Adresse saisie             │ 192.168.1.45/24                       │
-│ Version                    │ IPv4                                  │
-│ Adresse réseau             │ 192.168.1.0                           │
-│ Préfixe CIDR                │ /24                                   │
-│ Masque (décimal)           │ 255.255.255.0                         │
-│ Masque (binaire)           │ 11111111.11111111.11111111.00000000  │
-│ Adresse de broadcast       │ 192.168.1.255                         │
-│ Première IP utilisable     │ 192.168.1.1                           │
-│ Dernière IP utilisable     │ 192.168.1.254                         │
-│ Nombre total d'hôtes       │ 254                                    │
-│ Type de l'adresse saisie   │ Privée                                 │
-╰────────────────────────────┴───────────────────────────────────────╯
-```
+![Aperçu de l'interface graphique](screenshots/gui.png)
 
 ---
 
@@ -63,8 +43,8 @@ avec un code volontairement clair, commenté et pédagogique.
 1. **Cloner le dépôt**
 
 ```bash
-git clone https://github.com/<votre-utilisateur>/subnet-calculator.git
-cd subnet-calculator
+git clone https://github.com/zahraabadreddine/IPproject.git
+cd IPproject
 ```
 
 2. **Créer un environnement virtuel (recommandé)**
@@ -118,6 +98,39 @@ python subnet_calculator_gui.py
 Saisissez une adresse IP/CIDR dans le champ puis cliquez sur **Calculer**
 (ou appuyez sur Entrée) pour afficher les résultats dans le tableau.
 
+### Découpage en sous-réseaux (subnetting)
+
+Diviser un réseau en N sous-réseaux égaux :
+
+```bash
+python subnet_calculator.py 192.168.1.0/24 --split 4
+```
+
+Ou diviser en précisant directement le nouveau préfixe CIDR :
+
+```bash
+python subnet_calculator.py 192.168.1.0/24 --new-prefix 26
+```
+
+### Export des résultats (CSV / JSON)
+
+Chaque mode (adresse unique ou découpage) peut être exporté :
+
+```bash
+python subnet_calculator.py 192.168.1.45/24 --export-csv resultats.csv
+python subnet_calculator.py 192.168.1.0/24 --split 4 --export-json resultats.json
+```
+
+### Traitement par lot (batch)
+
+Analyser une liste d'adresses IP/CIDR depuis un fichier texte (une adresse
+par ligne), avec export optionnel :
+
+```bash
+python subnet_calculator.py --batch adresses.txt
+python subnet_calculator.py --batch adresses.txt --export-csv resultats.csv
+```
+
 ---
 
 ## ✅ Tests
@@ -154,13 +167,19 @@ pytest
 ## 📁 Structure du projet
 
 ```
-subnet-calculator/
-├── subnet_calculator.py       # Script principal (CLI)
-├── subnet_calculator_gui.py   # Interface graphique (Tkinter)
+IPproject/
+├── .github/
+│   └── workflows/
+│       └── tests.yml           # Intégration continue (GitHub Actions)
+├── subnet_calculator.py        # Script principal (CLI)
+├── subnet_calculator_gui.py    # Interface graphique (Tkinter)
+├── screenshots/
+│   └── gui.png                 # Capture d'écran de l'interface graphique
 ├── tests/
 │   └── test_subnet_calculator.py  # Suite de tests unitaires (pytest)
-├── requirements.txt           # Dépendances de production
-├── requirements-dev.txt       # Dépendances de développement (+ pytest)
+├── requirements.txt            # Dépendances de production
+├── requirements-dev.txt        # Dépendances de développement (+ pytest)
+├── LICENSE                     # Licence MIT
 └── README.md                   # Ce fichier
 ```
 
@@ -182,7 +201,10 @@ modification et de distribution.
 
 ## 👩‍💻 Auteur
 
-Développé par Zahraa Badreddine , étudiante en informatique passionnée par les
+Développé par **Zahraa Badreddine**, étudiante en informatique passionnée par les
 réseaux et la cybersécurité.
+
+- GitHub : [@zahraabadreddine](https://github.com/zahraabadreddine)
+- LinkedIn : [Zahraa Badreddine](https://www.linkedin.com/in/zahraa-badreddine)
 
 

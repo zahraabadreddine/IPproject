@@ -15,9 +15,14 @@ Licence : MIT
 import ipaddress
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import filedialog, messagebox, ttk
 
-from subnet_calculator import mask_to_binary, get_address_type, get_usable_hosts
+from subnet_calculator import (
+    build_result_dict,
+    export_results_csv,
+    export_results_json,
+    split_network,
+)
 
 # Libellés affichés dans le tableau de résultats, dans l'ordre voulu.
 FIELD_ORDER_IPV4 = [
@@ -105,6 +110,23 @@ class SubnetCalculatorApp(tk.Tk):
         calc_btn = ttk.Button(input_frame, text="Calculer", command=self.on_calculate)
         calc_btn.pack(side="left", padx=(8, 0))
 
+        # Zone de découpage en sous-réseaux
+        split_frame = ttk.Frame(container)
+        split_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(split_frame, text="Diviser en :").pack(side="left")
+        self.split_entry = ttk.Entry(split_frame, font=("Consolas", 11), width=6)
+        self.split_entry.pack(side="left", padx=(6, 0), ipady=4)
+        ttk.Label(split_frame, text="sous-réseaux").pack(side="left", padx=(6, 0))
+
+        split_btn = ttk.Button(split_frame, text="Diviser", command=self.on_split)
+        split_btn.pack(side="left", padx=(8, 0))
+
+        export_csv_btn = ttk.Button(split_frame, text="Exporter CSV", command=self.on_export_csv)
+        export_csv_btn.pack(side="right")
+        export_json_btn = ttk.Button(split_frame, text="Exporter JSON", command=self.on_export_json)
+        export_json_btn.pack(side="right", padx=(0, 8))
+
         # Tableau de résultats
         self.tree = ttk.Treeview(container, columns=("valeur",), show="tree headings")
         self.tree.heading("#0", text="Propriété")
@@ -115,24 +137,55 @@ class SubnetCalculatorApp(tk.Tk):
 
         ttk.Label(
             container,
-            text="Astuce : appuyez sur Entrée pour calculer.",
+            text="Astuce : appuyez sur Entrée pour calculer. Le découpage et l'export "
+                 "s'appliquent au dernier résultat calculé.",
             style="Subtitle.TLabel",
         ).pack(anchor="w", pady=(8, 0))
+
+        self.last_rows: list = []
 
     # ------------------------------------------------------------------ #
     # Logique
     # ------------------------------------------------------------------ #
 
+    def _parse_network(self, ip_input: str):
+        interface = ipaddress.ip_interface(ip_input)
+        return interface.network
+
+    def _configure_tree_single(self) -> None:
+        self.tree["columns"] = ("valeur",)
+        self.tree["show"] = "tree headings"
+        self.tree.heading("#0", text="Propriété")
+        self.tree.heading("valeur", text="Valeur")
+        self.tree.column("#0", width=200, anchor="w")
+        self.tree.column("valeur", width=320, anchor="w")
+
+    def _configure_tree_split(self) -> None:
+        columns = ("reseau", "prefixe", "premiere", "derniere", "hotes")
+        self.tree["columns"] = columns
+        self.tree["show"] = "headings"
+        headings = {
+            "reseau": "Adresse réseau",
+            "prefixe": "Préfixe",
+            "premiere": "Première IP",
+            "derniere": "Dernière IP",
+            "hotes": "Hôtes",
+        }
+        widths = {"reseau": 160, "prefixe": 70, "premiere": 140, "derniere": 140, "hotes": 90}
+        for col in columns:
+            self.tree.heading(col, text=headings[col])
+            self.tree.column(col, width=widths[col], anchor="w")
+
     def on_calculate(self) -> None:
         ip_input = self.entry.get().strip()
         self.tree.delete(*self.tree.get_children())
+        self._configure_tree_single()
 
         if not ip_input:
             return
 
         try:
-            interface = ipaddress.ip_interface(ip_input)
-            network = interface.network
+            network = self._parse_network(ip_input)
         except ValueError:
             messagebox.showerror(
                 "Entrée invalide",
@@ -141,32 +194,84 @@ class SubnetCalculatorApp(tk.Tk):
             )
             return
 
-        version_label = "IPv4" if network.version == 4 else "IPv6"
-        host_ip = interface.ip
-        first_usable, last_usable, total_hosts = get_usable_hosts(network)
-
-        values = {
-            "Adresse saisie": ip_input,
-            "Version": version_label,
-            "Adresse réseau": str(network.network_address),
-            "Préfixe CIDR": f"/{network.prefixlen}",
-            "Première IP utilisable": str(first_usable),
-            "Dernière IP utilisable": str(last_usable),
-            "Nombre total d'hôtes": f"{total_hosts:,}".replace(",", " "),
-            "Type de l'adresse saisie": get_address_type(host_ip),
-        }
-
-        if network.version == 4:
-            values["Masque (décimal)"] = str(network.netmask)
-            values["Masque (binaire)"] = mask_to_binary(network)
-            values["Adresse de broadcast"] = str(network.broadcast_address)
-            field_order = FIELD_ORDER_IPV4
-        else:
-            values["Masque (binaire)"] = mask_to_binary(network)
-            field_order = FIELD_ORDER_IPV6
+        values = build_result_dict(network, ip_input)
+        field_order = FIELD_ORDER_IPV4 if network.version == 4 else FIELD_ORDER_IPV6
 
         for field in field_order:
             self.tree.insert("", "end", text=field, values=(values[field],))
+
+        self.last_rows = [values]
+
+    def on_split(self) -> None:
+        ip_input = self.entry.get().strip()
+        n_text = self.split_entry.get().strip()
+
+        if not ip_input or not n_text:
+            messagebox.showerror(
+                "Entrée manquante",
+                "Saisissez une adresse IP/CIDR et un nombre de sous-réseaux.",
+            )
+            return
+
+        try:
+            network = self._parse_network(ip_input)
+        except ValueError:
+            messagebox.showerror(
+                "Entrée invalide",
+                "Le format saisi n'est pas une adresse IP/CIDR valide.",
+            )
+            return
+
+        try:
+            num_subnets = int(n_text)
+            subnets = split_network(network, num_subnets=num_subnets)
+        except ValueError as error:
+            messagebox.showerror("Découpage impossible", str(error))
+            return
+
+        self.tree.delete(*self.tree.get_children())
+        self._configure_tree_split()
+
+        self.last_rows = []
+        for subnet in subnets:
+            row = build_result_dict(subnet, str(subnet))
+            self.last_rows.append(row)
+            self.tree.insert(
+                "", "end",
+                values=(
+                    row["Adresse réseau"],
+                    row["Préfixe CIDR"],
+                    row["Première IP utilisable"],
+                    row["Dernière IP utilisable"],
+                    row["Nombre total d'hôtes"],
+                ),
+            )
+
+    def on_export_csv(self) -> None:
+        if not self.last_rows:
+            messagebox.showerror("Rien à exporter", "Calculez d'abord un résultat.")
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("Fichier CSV", "*.csv")],
+        )
+        if not path:
+            return
+        export_results_csv(self.last_rows, path)
+        messagebox.showinfo("Export réussi", f"Résultats exportés vers :\n{path}")
+
+    def on_export_json(self) -> None:
+        if not self.last_rows:
+            messagebox.showerror("Rien à exporter", "Calculez d'abord un résultat.")
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("Fichier JSON", "*.json")],
+        )
+        if not path:
+            return
+        export_results_json(self.last_rows, path)
+        messagebox.showinfo("Export réussi", f"Résultats exportés vers :\n{path}")
 
 
 def main() -> None:
