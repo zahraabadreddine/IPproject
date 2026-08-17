@@ -120,6 +120,18 @@ Saisissez une adresse IP/CIDR dans le champ puis cliquez sur **Calculer**
 
 ---
 
+## ✅ Tests
+
+Les fonctions de calcul (partagées entre la CLI et la GUI) sont couvertes par
+une suite de tests unitaires [`pytest`](https://docs.pytest.org/).
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+---
+
 ## 🧠 Exemples
 
 | Entrée                     | Sortie principale                                      |
@@ -145,7 +157,10 @@ Saisissez une adresse IP/CIDR dans le champ puis cliquez sur **Calculer**
 subnet-calculator/
 ├── subnet_calculator.py       # Script principal (CLI)
 ├── subnet_calculator_gui.py   # Interface graphique (Tkinter)
-├── requirements.txt           # Dépendances Python
+├── tests/
+│   └── test_subnet_calculator.py  # Suite de tests unitaires (pytest)
+├── requirements.txt           # Dépendances de production
+├── requirements-dev.txt       # Dépendances de développement (+ pytest)
 └── README.md                   # Ce fichier
 ```
 
@@ -170,4 +185,4 @@ modification et de distribution.
 Développé par Zahraa Badreddine , étudiante en informatique passionnée par les
 réseaux et la cybersécurité.
 
-[LinkedIn](#) • [GitHub](#)
+
